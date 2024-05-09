@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  server1:
+    build: ./
+    container_name: server1
+    ports:
+      - 3001:3000
+  
+  server2:
+    build: ./
+    container_name: server2
+    ports:
+      - 3002:3000
+
+  server3:
+    build: ./
+    container_name: server3
+    ports:
+      - 3003:3000
+  
