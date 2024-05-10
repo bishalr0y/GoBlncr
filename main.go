@@ -18,6 +18,15 @@ type LoadBalancer struct {
 	roundRobinCount int
 }
 
+func (s *Server) isAlive() bool {
+	_, err := http.Get(s.address)
+	if err != nil {
+		fmt.Printf("Invalid address: %v\n", err)
+		return false
+	}
+	return true
+}
+
 func createServer(address string) Server {
 	targetUrl, err := url.Parse(address)
 
@@ -55,9 +64,8 @@ func main() {
 		fmt.Println(server.address)
 	}
 
-	// for _, server := range servers {
-	// 	fmt.Print(server)
-	// }
+	// TODO pass the server proxy
+	fmt.Println(lb.servers[1].isAlive())
 
 	http.HandleFunc("/", reverseProxyHandler(lb.servers[1].proxy))
 
@@ -65,7 +73,6 @@ func main() {
 }
 
 func reverseProxyHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-	fmt.Printf("Forwarding request to: ")
 	return func(w http.ResponseWriter, r *http.Request) {
 		proxy.ServeHTTP(w, r)
 	}
