@@ -27,6 +27,23 @@ func (s *Server) isAlive() bool {
 	return true
 }
 
+func (lb *LoadBalancer) getNextServer() *httputil.ReverseProxy {
+	server := lb.servers[lb.roundRobinCount%len(lb.servers)]
+
+	for !server.isAlive() {
+		lb.roundRobinCount++
+		server = lb.servers[lb.roundRobinCount]
+	}
+
+	fmt.Println(server.address)
+	return server.proxy
+}
+
+func (lb *LoadBalancer) serve() *httputil.ReverseProxy {
+	server := lb.getNextServer()
+	return server
+}
+
 func createServer(address string) Server {
 	targetUrl, err := url.Parse(address)
 
@@ -64,16 +81,14 @@ func main() {
 		fmt.Println(server.address)
 	}
 
-	// TODO pass the server proxy
-	fmt.Println(lb.servers[1].isAlive())
-
-	http.HandleFunc("/", reverseProxyHandler(lb.servers[1].proxy))
+	http.HandleFunc("/", reverseProxyHandler(lb.serve()))
 
 	http.ListenAndServe(":8000", nil)
 }
 
 func reverseProxyHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// get the next server
 		proxy.ServeHTTP(w, r)
 	}
 }
