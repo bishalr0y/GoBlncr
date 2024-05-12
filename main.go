@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync"
 )
 
 type Server struct {
@@ -17,7 +16,6 @@ type Server struct {
 type LoadBalancer struct {
 	servers         []Server
 	roundRobinCount int
-	mutex           sync.Mutex
 }
 
 func (s *Server) isAlive() bool {
@@ -42,13 +40,11 @@ func (lb *LoadBalancer) getNextServer() *httputil.ReverseProxy {
 }
 
 func (lb *LoadBalancer) serve(w http.ResponseWriter, r *http.Request) {
-
-	lb.mutex.Lock()
-	defer lb.mutex.Unlock()
-
 	server := lb.getNextServer()
 	lb.roundRobinCount = lb.roundRobinCount % len(lb.servers)
 	fmt.Printf("Current server: %v\n", lb.servers[lb.roundRobinCount].address)
+
+	// this implicitly calls the getNextServer()
 	server.ServeHTTP(w, r)
 }
 
