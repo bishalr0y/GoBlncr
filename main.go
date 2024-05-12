@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 )
 
 type Server struct {
@@ -16,6 +17,7 @@ type Server struct {
 type LoadBalancer struct {
 	servers         []Server
 	roundRobinCount int
+	mutex           sync.Mutex
 }
 
 func (s *Server) isAlive() bool {
@@ -32,16 +34,22 @@ func (lb *LoadBalancer) getNextServer() *httputil.ReverseProxy {
 
 	for !server.isAlive() {
 		lb.roundRobinCount++
-		server = lb.servers[lb.roundRobinCount]
+		server = lb.servers[lb.roundRobinCount%len(lb.servers)]
 	}
-
-	fmt.Println(server.address)
+	lb.roundRobinCount++
+	// fmt.Printf("Next Server: %v\n", server.address)
 	return server.proxy
 }
 
-func (lb *LoadBalancer) serve() *httputil.ReverseProxy {
+func (lb *LoadBalancer) serve(w http.ResponseWriter, r *http.Request) {
+
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
+
 	server := lb.getNextServer()
-	return server
+	lb.roundRobinCount = lb.roundRobinCount % len(lb.servers)
+	fmt.Printf("Current server: %v\n", lb.servers[lb.roundRobinCount].address)
+	server.ServeHTTP(w, r)
 }
 
 func createServer(address string) Server {
@@ -77,18 +85,7 @@ func main() {
 
 	lb := createLoadBalancer(servers)
 
-	for _, server := range lb.servers {
-		fmt.Println(server.address)
-	}
-
-	http.HandleFunc("/", reverseProxyHandler(lb.serve()))
+	http.HandleFunc("/", lb.serve)
 
 	http.ListenAndServe(":8000", nil)
-}
-
-func reverseProxyHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// get the next server
-		proxy.ServeHTTP(w, r)
-	}
 }
