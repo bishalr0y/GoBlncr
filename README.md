@@ -2,7 +2,8 @@
 A Round Robin style, simple Golang load balancer. Prior to sending the user's request to the test server, it first verifies if the server is accessible. A basic web server built on Golang is used to mimic live web servers. The simple Golang server's three docker containers are spun up by the docker compose command. 
 
 ## Flow Diagram 🏗️
-![image](https://github.com/bishalr0y/GoBlncr/assets/56751927/ea435acf-93a4-4cd1-bf66-f2ea5fafd230)
+![Untitled-2024-02-22-1020](https://github.com/bishalr0y/GoBlncr/assets/56751927/8b210b18-d0c8-4bcd-938f-9d8e9102d582)
+
 
 ## How to run the project?🪄
 - Open the terminal and fire command below
