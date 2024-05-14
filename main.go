@@ -35,7 +35,6 @@ func (lb *LoadBalancer) getNextServer() *httputil.ReverseProxy {
 		server = lb.servers[lb.roundRobinCount%len(lb.servers)]
 	}
 	lb.roundRobinCount++
-	// fmt.Printf("Next Server: %v\n", server.address)
 	return server.proxy
 }
 
